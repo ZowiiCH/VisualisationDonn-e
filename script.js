@@ -47,13 +47,13 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
     });
 
   //  // Compute the layout.
-  //   const pack = data => d3.pack()
+  //   const pack = data_clean => d3.pack()
   //       .size([largeur, hauteur])
   //       .padding(3)
-  //     (d3.hierarchy(data)
+  //     (d3.hierarchy(data_clean)
   //       .sum(d => d.value)
   //       .sort((a, b) => b.value - a.value));
-  //   const root = pack(data);
+  //   const root = pack(data_clean);
 
     //Les Postes ______________________________________________________
   
@@ -147,7 +147,6 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
 
   //   view = v;
 
-  //   label.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
   //   noeuds.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
   //   noeuds.attr("r", d => d.r * k);
   // }
@@ -157,7 +156,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
 
   //   focus = d;
 
-  //   const transition = svg.transition()
+  //   const transition = noeuds.transition()
   //       .duration(event.altKey ? 7500 : 750)
   //       .tween("zoom", d => {
   //         const i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2]);
