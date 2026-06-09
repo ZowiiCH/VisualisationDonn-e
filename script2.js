@@ -2,13 +2,12 @@
 // VARIABLE CADRE
 const largeur = window.innerWidth;
 const hauteur = window.innerHeight;
-const marge = 20; 
+
 
 //Le fond
 const svg = d3
     .select("body")
     .append("svg")
-    .attr("class", "tooltip")
     .attr("width", largeur)
     .attr("height", hauteur)
     .style("border", "1px solid black")
@@ -27,6 +26,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
   .then((data) => {
     const data_clean = { "name": "données", "children": []}
     const posts_IDS = [... new Set(data.map(d => d.post_id))];
+   
     posts_IDS.forEach(post => {
       const comments = data.filter(d => d.post_id == post)
       const comments_clean = comments.map(d => {
@@ -46,6 +46,15 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
       data_clean.children.post
     });
 
+   // Compute the layout.
+    const pack = data_clean => d3.pack()
+        .size([largeur, hauteur])
+        .padding(3)
+      (d3.hierarchy(data_clean)
+        .sum(d => d.score)
+        .sort((a, b) => b.value - a.value));
+    const root = pack(data_clean);
+
     //Les Postes ______________________________________________________
   
     // échelle de taille des pays
@@ -55,7 +64,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
       
     //échelle de couleur : 
     const couleurPost = d3.scaleLinear()
-      .range(["#6415f7", "#ff75c1"])
+      .range(["#261447", "#fc038c"])
       .domain([0.61,0.97]) // pas en dessous de 0,7 je crois
 
 
@@ -75,7 +84,6 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
       Tooltip
       .style("opacity", 1)
       }
-
     const mousemove = function(event, d) {
       Tooltip
       .html('<u>' + d.title + '</u>' 
@@ -90,9 +98,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
     }
 
   // 
-    const g = svg.append("g");
-
-    const noeuds = g
+    const noeuds = svg.append("g")
       .selectAll("circle")
       .data(data_clean.children)
       .join(
@@ -127,7 +133,66 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
             .attr("cy", d => d.y)
       });
 
- // Création des commentaires
+ // Création des commentaires 
+
+  // Append the nodes.
+  const comm = svg.append("g")
+    .selectAll("circle")
+    .data(root.descendants().slice(1))
+    .join("circle")
+      .attr("fill", d => d.children ? color(d.depth) : "white")
+      .attr("pointer-events", d => !d.children ? "none" : null)
+      .on("mouseover", function() { d3.select(this).attr("stroke", "#000"); })
+      .on("mouseout", function() { d3.select(this).attr("stroke", null); })
+      .on("click", (event, d) => focus !== d && (zoom(event, d), event.stopPropagation()));
+
+  // Append the text labels.
+  const label = svg.append("g")
+      .style("font", "10px sans-serif")
+      .attr("pointer-events", "none")
+      .attr("text-anchor", "middle")
+    .selectAll("text")
+    .data(root.descendants())
+    .join("text")
+      .style("fill-opacity", d => d.parent === root ? 1 : 0)
+      .style("display", d => d.parent === root ? "inline" : "none")
+      .text(d => d.data.name);
+  // Create the zoom behavior and zoom immediately in to the initial focus node.
+  svg.on("click", (event) => zoom(event, root));
+  let focus = root;
+  let view;
+  zoomTo([focus.x, focus.y, focus.r * 2]);
+
+  function zoomTo(v) {
+    const k = largeur / v[2];
+
+    view = v;
+
+    noeuds.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
+    noeuds.attr("r", d => d.r * k);
+  }
+
+  function zoom(event, d) {
+    const focus0 = focus;
+
+    focus = d;
+
+    const transition = noeuds.transition()
+        .duration(event.altKey ? 7500 : 750)
+        .tween("zoom", d => {
+          const i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2]);
+          return t => zoomTo(i(t));
+        });
+
+    label
+      .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+      .transition(transition)
+        .style("fill-opacity", d => d.parent === focus ? 1 : 0)
+        .on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+        .on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+  }
+
+  return svg.noeuds();
 
       console.log(data_clean.children.map(d => ({ score: d.score, ratio: d.ratio })))
   })
