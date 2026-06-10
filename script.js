@@ -13,7 +13,7 @@ const svg = d3
     .attr("height", hauteur)
     .style("border", "1px solid black")
     .style("background", "lightblue")
-  
+
 // Importation de mes données
 const data = d3.dsv(";", "Data_projet.csv", d => {
   return {
@@ -43,7 +43,6 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
         "ratio": post_data.post_upvote_ratio,
         "children": comments_clean
       })
-      data_clean.children.post
     });
 
     //Les Postes ______________________________________________________
@@ -57,6 +56,10 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
     const couleurPost = d3.scaleLinear()
       .range(["#6415f7", "#ff75c1"])
       .domain([0.61,0.97]) // pas en dessous de 0,7 je crois
+
+    const couleurCom = d3.scaleLinear()
+      .range(["#6415f7", "#ff75c1"])
+      .domain([d3.min(data_clean.children.flatMap(post => post.children), d => d.score),d3.max(data_clean.children.flatMap(post => post.children), d => d.score)]) // pas en dessous de 0,7 je crois
 
 
     // MouseOver
@@ -92,6 +95,8 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
   // 
     const g = svg.append("g");
 
+    let focus = null;
+
     const noeuds = g
       .selectAll("circle")
       .data(data_clean.children)
@@ -104,7 +109,6 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
               .attr("cx", largeur / 2)
               .attr("cy", hauteur / 2)
               .attr("fill", d => couleurPost(d.ratio))
- //             .transition()
               .style("fill-opacity", 1)
               .attr("stroke", "black")
               .style("stroke-width", 1)
@@ -129,6 +133,57 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
 
  // Création des commentaires
 
+      function zoom(event, d){
+
+        const k  = Math.min(largeur, hauteur) / (taillePost(d.score) * 2)
+        const tx = largeur/2 - d.x * k
+        const ty = hauteur/2 - d.y * k
+        g.transition().duration(750)
+        .attr("transform", `translate(${tx}, ${ty}) scale(${k})`);
+
+          const tailleCom = d3.scaleLinear()
+                            .domain([d3.min(data_clean.children, com => com.score),d3.max(data_clean.children, com => com.score)])
+                            .range([10, 60]);  
+
+        const c = svg.append("g");
+
+        const commentaires = c
+          .selectAll("circle")
+          .data(d.children)
+          .join(
+              (enter) =>
+                enter
+                  .append("circle")
+                  .attr("class", "commentaire")
+                  .attr("r", com => tailleCom(com.score))
+                  .attr("cx", largeur / 2)
+                  .attr("cy", hauteur / 2)
+                  .attr("fill", com => couleurCom(com.score))
+                  .style("fill-opacity", 1)
+                  .attr("stroke", "black")
+                  .style("stroke-width", 1)
+              );
+
+            d3.forceSimulation()
+            .force("center", d3.forceCenter().x(largeur / 2).y(hauteur / 2)) 
+            .force("charge", d3.forceManyBody().strength(.1)) 
+            .force("collide", d3.forceCollide().strength(.2).radius(function(d){ return (com => tailleCom(com.score))}).iterations(1)) 
+            .nodes(data_clean.children)
+            .on("tick", function(com){
+              commentaires
+                  .attr("cx", com => com.x)
+                  .attr("cy", com => com.y)
+            });
+   
+      }
+      
+      svg.on("click", () => {
+        focus = null;
+        g.transition().duration(750)
+        .attr("transform", `translate(${0}, ${0}) scale(${1})`)  ;
+        d3.selectAll(".commentaire").remove()//.stop();
+      })
+  
       console.log(data_clean.children.map(d => ({ score: d.score, ratio: d.ratio })))
   })
   .catch((error) => {
