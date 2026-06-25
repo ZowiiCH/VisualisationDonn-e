@@ -3,6 +3,8 @@
 ## Description
 Ce travail propose une visualisation des postes Reddit de r/worldnews sur le sujet du conflit israélo-palestinien. Vous pouvez y voir les postes ayant eu le plus d'interaction, ainsi que leurs commentaires en interagissant avec chaque poste.
 
+![alt-text Capture d'écran sur laquelle on voit apparaître de nombreux cercle de couleurs violet à rose](overall.png)
+
 ## Une présentation des données
 Les données viennent de [Kaggle](https://www.kaggle.com/datasets/asaniczka/reddit-on-israel-palestine-daily-updated?resource=download). Il s'agit du travail de récolte journalier de l'utilisateur Asaniczka. 
 
@@ -25,6 +27,7 @@ J'ai fait le choix d'une visualisation avec des cercles à la fois, car cela fon
 Pour chaque poste, je souhaitais rendre à la fois visibles leurs nombres d'upvote et leurs ratios de vote positif/négatif. Ainsi la taille représente le premier et une échelle de couleur permet de voir le ratio. 
 
 La même logique a été mise en place pour les commentaires. 
+![alt-text Capture d'écran d'un post ou l'on voit les commentaires.](commentaire.png)
 
 En complément, un mouseover permet d'avoir les informations concernant chacune des données plus précisément.
 
