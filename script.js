@@ -21,7 +21,23 @@ const titre = svg.append("text")
   .style("font-size", "16spx")
   .style("font-weight", "bold")
   .style("font-family", "sans-serif")
-  .text("Post reddit sur le conflit Israelio-palestinien");
+  .text("Posts r/worldnews sur le conflit Israélio-palestinien");
+
+const legendeTaille = svg.append("text")
+    .attr("x", 10)
+    .attr("y", hauteur - 60)
+    .attr("text-anchor", "left")
+    .style("font-size", "13px")
+    .style("font-family", "sans-serif")
+    .text("Score du post = taille du cercle");
+
+const legendeCouleur = svg.append("text")
+    .attr("x", 10)
+    .attr("y", hauteur - 40)
+    .attr("text-anchor", "left")
+    .style("font-size", "13px")
+    .style("font-family", "sans-serif")
+    .text("Ratio de votes négatif/positifs : violet → rose");
 
   // Importation de mes données
 const data = d3.dsv(";", "Data_projet.csv", d => {
@@ -143,7 +159,10 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
  // Création des commentaires
 
     function zoom(event, d){
-        svg.selectAll(".commentaire").remove();
+      focus = d ;
+      Tooltip.style("opacity", 0);
+      console.log(d.children.map(c=>c.score));
+      svg.selectAll(".commentaire").remove();
       const k  = Math.min(largeur, hauteur) / (taillePost(d.score) * 2)
       const tx = largeur/2 - d.x * k
       const ty = hauteur/2 - d.y * k
@@ -154,22 +173,11 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
 
       const tailleCom = d3.scaleLinear()
                         .domain([
-                          d3.min(data_clean.children.flatMap(post => post.children), com => com.score),
-                          d3.max(data_clean.children.flatMap(post => post.children), com => com.score)
+                          100,
+                          d3.max(data_clean.children.flatMap(post => post.children), com => Math.abs(com.score))
                         ])           
                         .range([10, 60]);  
 
-      // MouseOver commentaire
-      const Tooltip = d3.select("body")
-        .append("div")
-        .style("position", "absolute")
-        .style("opacity", 0)
-        .attr("class", "tooltip")
-        .style("background-color", "pink")
-        .style("border", "solid")
-        .style("border-width", "2px")
-        .style("border-radius", "5px")
-        .style("padding", "5px")
 
       const mouseover = function(event, d) {
         Tooltip
@@ -199,7 +207,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
               enter
                 .append("circle")
                 .attr("class", "commentaire")
-                .attr("r", com => tailleCom(com.score))
+                .attr("r", com => tailleCom(Math.abs(com.score)))
                 .attr("cx", largeur / 2)
                 .attr("cy", hauteur / 2)
                 .attr("fill", com => couleurCom(com.score))
@@ -214,7 +222,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
           const simu2 = d3.forceSimulation(d.children)
           .force("center", d3.forceCenter(largeur / 2).y(hauteur / 2)) 
           .force("charge", d3.forceManyBody().strength(-20)) 
-          .force("collide", d3.forceCollide().strength(.1).radius(com => tailleCom(com.score)).iterations(2))
+          .force("collide", d3.forceCollide().strength(.1).radius(com => tailleCom(Math.abs(com.score))).iterations(2))
           simu2
           .nodes(d.children)
           .on("tick", function(com){
@@ -226,6 +234,7 @@ const data = d3.dsv(";", "Data_projet.csv", d => {
     
     svg.on("click", () => {
       focus = null;
+      Tooltip.style("opacity", 0);
       g.transition().duration(750)
       .attr("transform", `translate(${0}, ${0}) scale(${1})`)  ;
       d3.selectAll(".commentaire").remove()//.stop();
